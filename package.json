@@ -2,6 +2,7 @@
   "dependencies": {
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "mongo-express": "^1.1.0-rc-3"
+    "mongo-express": "^1.1.0-rc-3",
+    "mongoose": "^8.16.0"
   }
 }
