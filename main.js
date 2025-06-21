@@ -7,30 +7,23 @@ import dotenv from "dotenv";
 import cors from "cors";
 
 dotenv.config();
+const port = process.env.PORT;
 
 const clientOptions = {
   serverApi: { version: "1", strict: true, deprecationErrors: true },
 };
 const url = process.env.URL;
 
-mongoose
-  .connect(url, clientOptions)
-  .then(() => {
-    console.log("Successfully connected to MongoDB!");
-
-    return mongoose.connection.db.admin().command({ ping: 1 });
-  })
-  .then(() => {
-    console.log("Pinged your deployment. Database is responsive!");
-  })
-  .catch((err) => {
-    console.error("MongoDB connection error:", err);
-
-    process.exit(1);
-  });
+try {
+  await mongoose.connect(url, clientOptions);
+  await mongoose.connection.db.admin().command({ ping: 1 });
+  console.log("database connected Successfully");
+} catch (err) {
+  console.error("MongoDB connection error:", err);
+  process.exit(1);
+}
 
 const app = express();
-const port = process.env.PORT;
 
 app.use(express.json());
 
@@ -42,7 +35,6 @@ app.get("/health", (req, res) => {
 });
 
 app.post("/signup", async (req, res) => {
-  console.log("body", req.body);
   try {
     const foundUser = await User.findOne({ email: req.body.email });
     if (foundUser) {
@@ -52,9 +44,9 @@ app.post("/signup", async (req, res) => {
       });
     }
 
-    const salt = bcrypt.genSaltSync(10);
+    const salt = await bcrypt.genSalt(10);
 
-    const hashedPassword = bcrypt.hashSync(req.body.password, salt);
+    const hashedPassword = await bcrypt.hash(req.body.password, salt);
 
     const newUser = await User.create({
       email: req.body.email,
