@@ -1,5 +1,23 @@
 {
+  "name": "todolist_node",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node --watch main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mustafaksaeed/todoList_Node.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mustafaksaeed/todoList_Node/issues"
+  },
+  "homepage": "https://github.com/mustafaksaeed/todoList_Node#readme",
+  "description": "",
   "dependencies": {
+    "bcryptjs": "^3.0.2",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "mongo-express": "^1.1.0-rc-3",
