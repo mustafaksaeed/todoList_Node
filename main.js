@@ -1,18 +1,30 @@
 import express from "express";
 import bcrypt from "bcryptjs";
-
-// import mongoose from "mongoose";
+import user from "./models/user.js";
+import mongoose from "mongoose";
 import userRoutes from "./routes/userRoutes.js";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 const app = express();
+const port = process.env.PORT;
+const url = process.env.URI;
+const clientOptions = {
+  serverApi: { version: "1", strict: true, deprecationErrors: true },
+};
+
+try {
+  await mongoose.connect(url, clientOptions);
+  await mongoose.connection.db.admin().command({ ping: 1 });
+  console.log("Pinged your deployment. You successfully connected to MongoDB!");
+} finally {
+  await mongoose.disconnect();
+}
+
 app.use(express.json());
 
 app.use("/user", userRoutes);
-
-const port = process.env.PORT;
 
 app.get("/health", (req, res) => {
   res.send("API is healthy!");
@@ -20,52 +32,54 @@ app.get("/health", (req, res) => {
 
 let allUsers = [];
 
-app.post("/signup", (req, res) => {
-  const { email, password } = req.body;
+app.post("/signup", async (req, res) => {
+  try {
+    const foundUser = await user.findOne({ email: req.body.email });
+    if (!foundUser) {
+      res.status(400).send({
+        message: "user already exists ",
+        status: "failed",
+      });
+    }
 
-  const foundUser = allUsers.find((user) => user.email === email);
-  if (foundUser) {
-    res.status(400).send({
-      message: "user already exists ",
-      status: "failed",
-    });
+    const salt = bcrypt.genSaltSync(10);
+
+    const hashedPassword = bcrypt.hashSync(req.body.password, salt);
+
+    const newUser = {
+      email: req.body.email,
+      password: hashedPassword,
+    };
+
+    await newUser.save();
+    res.status(200).send({ message: "user created ", status: "Success" });
+  } catch (error) {
+    res
+      .status(400)
+      .send({ message: "internal server error ", status: "failure" });
   }
-  const newUser = {
-    id: Date.now(),
-    email: email,
-    password: password,
-  };
-
-  allUsers.push(newUser);
-  console.log("users", allUsers);
-  res
-    .status(200)
-    .send({ message: "user created ", status: "Success", users: allUsers });
 });
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
 
-// const uri = process.env.URI;
+// app.post("/login", (req, res) => {
+//   const { email, password } = req.body;
 
-// const clientOptions = {
-//   serverApi: { version: "1", strict: true, deprecationErrors: true },
-// };
+//   const Userfound = allUsers.find((user) => user.email === email);
 
-// async function run() {
-//   try {
-//     // Create a Mongoose client with a MongoClientOptions object to set the Stable API version
-//     await mongoose.connect(uri, clientOptions);
-//     await mongoose.connection.db.admin().command({ ping: 1 });
-//     console.log(
-//       "Pinged your deployment. You successfully connected to MongoDB!"
-//     );
-//   } finally {
-//     await mongoose.disconnect();
+//   if (!Userfound) {
+//     res.status(401).send({ message: "user credentials invalud" });
 //   }
-// }
-// run().catch(console.dir);
+//   const comparedPassword = bcrypt.compare(password, Userfound.password);
+
+//   if (!comparedPassword) {
+//     res.status(401).send({ message: "user credentials invalud" });
+//   }
+
+//   res.status(401).send({ message: "Login Successful" });
+// });
 
 /*
 - user/userid/
