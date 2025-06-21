@@ -4,15 +4,16 @@ import User from "./models/user.js";
 import mongoose from "mongoose";
 import userRoutes from "./routes/userRoutes.js";
 import dotenv from "dotenv";
+import cors from "cors";
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT;
-const url = process.env.URI;
 const clientOptions = {
   serverApi: { version: "1", strict: true, deprecationErrors: true },
 };
+const url = process.env.URI;
 
 try {
   await mongoose.connect(url, clientOptions);
@@ -25,38 +26,48 @@ try {
 app.use(express.json());
 
 app.use("/user", userRoutes);
+app.use(cors());
 
 app.get("/health", (req, res) => {
   res.send("API is healthy!");
 });
 
 app.post("/signup", async (req, res) => {
-  console.log("body", req.body);
-  try {
-    const foundUser = await User.findOne({ email: req.body.email });
-    if (foundUser) {
-      res.status(400).send({
-        message: "user already exists ",
-        status: "failed",
-      });
-    }
+  // console.log("body", req.body);
+  // try {
+  //   const foundUser = await users.findOne({ email: req.body.email });
+  //   if (foundUser) {
+  //     res.status(400).send({
+  //       message: "user already exists ",
+  //       status: "failed",
+  //     });
+  //   }
 
-    const salt = bcrypt.genSaltSync(10);
+  //   const salt = bcrypt.genSaltSync(10);
 
-    const hashedPassword = bcrypt.hashSync(req.body.password, salt);
+  //   const hashedPassword = bcrypt.hashSync(req.body.password, salt);
 
-    const newUser = {
-      email: req.body.email,
-      password: hashedPassword,
-    };
+  //   const newUser = {
+  //     email: req.body.email,
+  //     password: hashedPassword,
+  //   };
 
-    await newUser.save();
-    res.status(200).send({ message: "user created ", status: "Success" });
-  } catch (error) {
-    res
-      .status(400)
-      .send({ message: "internal server error ", status: "failure" });
-  }
+  //   await newUser.save();
+  //   res.status(200).send({ message: "user created ", status: "Success" });
+  // } catch (error) {
+  //   res
+  //     .status(400)
+  //     .send({ message: "internal server error ", status: "failure" });
+  // }
+
+  const newUser = await User.create({
+    email: "mustafaksaxssx@gmail.com",
+    password: "soccer",
+  });
+
+  res.status(201).json({
+    message: "User registered successfully",
+  });
 });
 
 app.listen(port, () => {
