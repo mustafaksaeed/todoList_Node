@@ -8,20 +8,29 @@ import cors from "cors";
 
 dotenv.config();
 
-const app = express();
-const port = process.env.PORT;
 const clientOptions = {
   serverApi: { version: "1", strict: true, deprecationErrors: true },
 };
-const url = process.env.URI;
+const url = process.env.URL;
 
-try {
-  await mongoose.connect(url, clientOptions);
-  await mongoose.connection.db.admin().command({ ping: 1 });
-  console.log("Pinged your deployment. You successfully connected to MongoDB!");
-} finally {
-  await mongoose.disconnect();
-}
+mongoose
+  .connect(url, clientOptions)
+  .then(() => {
+    console.log("Successfully connected to MongoDB!");
+
+    return mongoose.connection.db.admin().command({ ping: 1 });
+  })
+  .then(() => {
+    console.log("Pinged your deployment. Database is responsive!");
+  })
+  .catch((err) => {
+    console.error("MongoDB connection error:", err);
+
+    process.exit(1);
+  });
+
+const app = express();
+const port = process.env.PORT;
 
 app.use(express.json());
 
@@ -33,63 +42,59 @@ app.get("/health", (req, res) => {
 });
 
 app.post("/signup", async (req, res) => {
-  // console.log("body", req.body);
-  // try {
-  //   const foundUser = await users.findOne({ email: req.body.email });
-  //   if (foundUser) {
-  //     res.status(400).send({
-  //       message: "user already exists ",
-  //       status: "failed",
-  //     });
-  //   }
+  console.log("body", req.body);
+  try {
+    const foundUser = await User.findOne({ email: req.body.email });
+    if (foundUser) {
+      res.status(400).send({
+        message: "user already exists ",
+        status: "failed",
+      });
+    }
 
-  //   const salt = bcrypt.genSaltSync(10);
+    const salt = bcrypt.genSaltSync(10);
 
-  //   const hashedPassword = bcrypt.hashSync(req.body.password, salt);
+    const hashedPassword = bcrypt.hashSync(req.body.password, salt);
 
-  //   const newUser = {
-  //     email: req.body.email,
-  //     password: hashedPassword,
-  //   };
+    const newUser = await User.create({
+      email: req.body.email,
+      password: hashedPassword,
+    });
 
-  //   await newUser.save();
-  //   res.status(200).send({ message: "user created ", status: "Success" });
-  // } catch (error) {
-  //   res
-  //     .status(400)
-  //     .send({ message: "internal server error ", status: "failure" });
-  // }
-
-  const newUser = await User.create({
-    email: "mustafaksaxssx@gmail.com",
-    password: "soccer",
-  });
-
-  res.status(201).json({
-    message: "User registered successfully",
-  });
+    res.status(200).send({ message: "user created ", status: "Success" });
+  } catch (error) {
+    res
+      .status(400)
+      .send({ message: "internal server error ", status: "failure" });
+  }
 });
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
 
-// app.post("/login", (req, res) => {
-//   const { email, password } = req.body;
+app.post("/login", async (req, res) => {
+  try {
+    const Userfound = await User.findOne({ email: req.body.email });
 
-//   const Userfound = allUsers.find((user) => user.email === email);
+    if (!Userfound) {
+      res.status(401).send({ message: "user credentials invalud" });
+    }
+    const comparedPassword = await bcrypt.compare(
+      req.body.password,
+      Userfound.password
+    );
 
-//   if (!Userfound) {
-//     res.status(401).send({ message: "user credentials invalud" });
-//   }
-//   const comparedPassword = bcrypt.compare(password, Userfound.password);
+    if (!comparedPassword) {
+      res.status(401).send({ message: "user credentials invalud" });
+    }
 
-//   if (!comparedPassword) {
-//     res.status(401).send({ message: "user credentials invalud" });
-//   }
-
-//   res.status(401).send({ message: "Login Successful" });
-// });
+    res.status(401).send({ message: "login successful" });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).send({ message: "internal server error" });
+  }
+});
 
 /*
 - user/userid/
