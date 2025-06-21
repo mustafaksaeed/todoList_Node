@@ -1,6 +1,6 @@
 import express from "express";
 import bcrypt from "bcryptjs";
-import user from "./models/user.js";
+import User from "./models/user.js";
 import mongoose from "mongoose";
 import userRoutes from "./routes/userRoutes.js";
 import dotenv from "dotenv";
@@ -30,12 +30,11 @@ app.get("/health", (req, res) => {
   res.send("API is healthy!");
 });
 
-let allUsers = [];
-
 app.post("/signup", async (req, res) => {
+  console.log("body", req.body);
   try {
-    const foundUser = await user.findOne({ email: req.body.email });
-    if (!foundUser) {
+    const foundUser = await User.findOne({ email: req.body.email });
+    if (foundUser) {
       res.status(400).send({
         message: "user already exists ",
         status: "failed",
