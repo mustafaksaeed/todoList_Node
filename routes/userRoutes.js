@@ -4,8 +4,8 @@ import todoRoutes from "./todoRoutes.js";
 
 const router = express.Router();
 
-router.get("/", (req, res) => {
-  res.send("Users Home Page");
+router.get("/:id", (req, res) => {
+  res.send("welcome to dashboard");
 });
 
 router.use("/:id/posts", todoRoutes);

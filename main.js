@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 import userRoutes from "./routes/userRoutes.js";
 import dotenv from "dotenv";
 import cors from "cors";
-
+import jwt from "jsonwebtoken";
 dotenv.config();
 const port = process.env.PORT;
 
@@ -28,6 +28,8 @@ app.use(express.json());
 
 app.use("/user", userRoutes);
 app.use(cors());
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 app.get("/health", (req, res) => {
   res.send("API is healthy!");
@@ -92,7 +94,14 @@ app.post("/login", async (req, res) => {
       res.status(401).send({ message: "user credentials invalud" });
     }
 
-    res.status(401).send({ message: "login successful" });
+    const token = jwt.sign({ email: Userfound.email }, JWT_SECRET, {
+      expiresIn: "3h",
+    });
+
+    console.log("token", token);
+    res.status(200).json({
+      token,
+    });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).send({ message: "internal server error" });
@@ -100,9 +109,10 @@ app.post("/login", async (req, res) => {
 });
 
 /*
-- user/userid/
+once done add a frontend and a calendar export 
 
-
+initate a jwt token with user email 
+break the user email and find it from database and put it in id
 
 
 */
