@@ -108,11 +108,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-/*
-once done add a frontend and a calendar export 
-
-initate a jwt token with user email 
-break the user email and find it from database and put it in id
 
 
-*/
+
+
