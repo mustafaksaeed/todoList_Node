@@ -1,6 +1,7 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import User from "./models/user.js";
+import Todolist from "./models/todolist.js";
 import mongoose from "mongoose";
 import todoRoutes from "./routes/todoRoutes.js";
 import dotenv from "dotenv";
@@ -104,10 +105,42 @@ app.post("/login", async (req, res) => {
   }
 });
 
-async function authTokenValidation(req, res, next) {
-  
-}
-app.get("/tasks", (req, res) => {});
+const authorize = async (req, res, next) => {
+  const token = req.headers.authorization.replace("Bearer ", "");
+
+  console.log(token);
+
+  if (!token) {
+    res.status(401).json({
+      error: "Unauthorized",
+    });
+
+    return;
+  }
+
+  try {
+    const { email } = jwt.verify(token, JWT_SECRET);
+
+    const user = data.users.findOne({ email: email });
+
+    if (!user) {
+      res.status(401).json({
+        error: "Unauthorized",
+      });
+
+      return;
+    }
+
+    req.user = user;
+
+    next();
+  } catch (err) {
+    res.status(401).json({
+      error: "Unauthorized",
+    });
+  }
+};
+app.get("/todo", authorize, (req, res) => {});
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);

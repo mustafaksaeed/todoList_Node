@@ -7,6 +7,6 @@ const todolistSchema = new mongoose.Schema({
   },
 });
 
-const todolist = mongoose.model("todolist", todolistSchema);
+const Todolist = mongoose.model("todolist", todolistSchema);
 
-export default todolist;
+export default Todolist;
