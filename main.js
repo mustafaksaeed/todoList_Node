@@ -2,7 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import User from "./models/user.js";
 import mongoose from "mongoose";
-import userRoutes from "./routes/userRoutes.js";
+import todoRoutes from "./routes/todoRoutes.js";
 import dotenv from "dotenv";
 import cors from "cors";
 import jwt from "jsonwebtoken";
@@ -26,7 +26,7 @@ const app = express();
 
 app.use(express.json());
 
-app.use("/user", userRoutes);
+app.use("/todo", todoRoutes);
 app.use(cors());
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -76,10 +76,6 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
-
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -108,11 +104,11 @@ app.post("/login", async (req, res) => {
   }
 });
 
-/*
-once done add a frontend and a calendar export 
+async function authTokenValidation(req, res, next) {
+  
+}
+app.get("/tasks", (req, res) => {});
 
-initate a jwt token with user email 
-break the user email and find it from database and put it in id
-
-
-*/
+app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
+});
