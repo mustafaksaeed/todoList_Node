@@ -39,3 +39,39 @@ app.get("/health", (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
+<<<<<<< HEAD
+=======
+
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const Userfound = await User.findOne({ email: email });
+
+    if (!Userfound) {
+      res.status(401).send({ message: "user credentials invalud" });
+    }
+    const comparedPassword = await bcrypt.compare(password, Userfound.password);
+
+    if (!comparedPassword) {
+      res.status(401).send({ message: "user credentials invalud" });
+    }
+
+    const token = jwt.sign({ email: Userfound.email }, JWT_SECRET, {
+      expiresIn: "3h",
+    });
+
+    console.log("token", token);
+    res.status(200).json({
+      token,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).send({ message: "internal server error" });
+  }
+});
+
+
+
+
+
+>>>>>>> f1cedb5dfecd82855274bdba47e0b92a4b86a75e
