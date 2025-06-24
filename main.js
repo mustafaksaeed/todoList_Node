@@ -1,14 +1,15 @@
 import express from "express";
-import bcrypt from "bcryptjs";
-import User from "./models/user.js";
-import Todolist from "./models/todolist.js";
+import dotenv from "dotenv";
+dotenv.config();
 import mongoose from "mongoose";
 import todoRoutes from "./routes/todoRoutes.js";
-import dotenv from "dotenv";
+import authRoutes from "./routes/authRoutes.js";
+
 import cors from "cors";
-import jwt from "jsonwebtoken";
-dotenv.config();
+import authorize from "./middleware/authorize.js";
+
 const port = process.env.PORT;
+
 
 const clientOptions = {
   serverApi: { version: "1", strict: true, deprecationErrors: true },
@@ -24,123 +25,16 @@ try {
 }
 
 const app = express();
+app.use(cors());
 
 app.use(express.json());
 
-app.use("/todo", todoRoutes);
-app.use(cors());
-
-const JWT_SECRET = process.env.JWT_SECRET;
+app.use("/todos", authorize, todoRoutes);
+app.use("/auth", authRoutes);
 
 app.get("/health", (req, res) => {
   res.send("API is healthy!");
 });
-
-app.post("/signup", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const foundUser = await User.findOne({ email: email });
-    if (foundUser) {
-      res.status(400).send({
-        message: "user already exists ",
-      });
-    }
-
-    const salt = await bcrypt.genSalt(10);
-
-    const hashedPassword = await bcrypt.hash(password, salt);
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+.[a-zA-Z]{2,}$/;
-    const isValidEmail = (email) => emailRegex.test(email);
-    const isValidPassword = (password) => password.length > 6;
-
-    if (!isValidEmail(email)) {
-      return res.status(400).send({
-        message: "email format invalid",
-      });
-    }
-
-    if (!isValidPassword(password)) {
-      return res.status(400).send({
-        message: "password must be atleast 6 characters long",
-      });
-    }
-    const newUser = await User.create({
-      email: email,
-      password: hashedPassword,
-    });
-
-    res.status(200).send({ message: "user created ", status: "Success" });
-  } catch (error) {
-    res
-      .status(400)
-      .send({ message: "internal server error ", status: "failure" });
-  }
-});
-
-app.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const Userfound = await User.findOne({ email: email });
-
-    if (!Userfound) {
-      res.status(401).send({ message: "user credentials invalud" });
-    }
-    const comparedPassword = await bcrypt.compare(password, Userfound.password);
-
-    if (!comparedPassword) {
-      res.status(401).send({ message: "user credentials invalud" });
-    }
-
-    const token = jwt.sign({ email: Userfound.email }, JWT_SECRET, {
-      expiresIn: "3h",
-    });
-
-    console.log("token", token);
-    res.status(200).json({
-      token,
-    });
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).send({ message: "internal server error" });
-  }
-});
-
-const authorize = async (req, res, next) => {
-  const token = req.headers.authorization.replace("Bearer ", "");
-
-  console.log(token);
-
-  if (!token) {
-    res.status(401).json({
-      error: "Unauthorized",
-    });
-
-    return;
-  }
-
-  try {
-    const { email } = jwt.verify(token, JWT_SECRET);
-
-    const user = data.users.findOne({ email: email });
-
-    if (!user) {
-      res.status(401).json({
-        error: "Unauthorized",
-      });
-
-      return;
-    }
-
-    req.user = user;
-
-    next();
-  } catch (err) {
-    res.status(401).json({
-      error: "Unauthorized",
-    });
-  }
-};
-app.get("/todo", authorize, (req, res) => {});
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);

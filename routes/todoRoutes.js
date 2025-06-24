@@ -1,28 +1,61 @@
 import express from "express";
-
+import Todo from "../models/todo.js";
+import User from "../models/user.js";
+import mongoose from "mongoose";
 const router = express.Router();
 
-router.get("/", (req, res) => {
-  res.send("List of user tasks");
+router.get("/", async (req, res) => {
+  const user = req.user;
+
+  const todos = await Todo.find({ user: user._id });
+
+  return res.status(200).json({
+    todos,
+  });
 });
 
-router.get("/:todoId", (req, res) => {
-  const { todoId } = req.params;
-  res.send(`Post ID: ${todoId}`);
+router.get("/:id", async (req, res) => {
+  const { id } = req.params;
+
+  const todo = await Todo.findById(id);
+
+  if (!todo) {
+    res.status(400).json({
+      error: "Todo does not exist.",
+    });
+    return;
+  }
+
+  if (todo.user.toString() !== req.user._id.toString()) {
+    res.status(401).json({
+      error: "Unauthorized",
+    });
+    return;
+  }
+
+  res.status(200).json({ todo });
 });
 
-router.post("/todo/create", async (req, res) => {
+function validParams(req, res, id) {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "Invalid Todo ID format." });
+  }
+}
+router.post("/", async (req, res) => {
   try {
-    const { tasks } = req.body;
+    const { body } = req.body;
 
-    const task = await Todolist.create({ tasks: tasks });
+    const newTodo = await Todo.create({
+      body,
+      user: req.user._id,
+    });
+
+    await User.findByIdAndUpdate(req.user._id, {
+      $push: { todos: newTodo._id },
+    });
 
     res.status(201).json({
-      message: "Todo list created successfully!",
-      user: {
-        id: req.user._id, // Access user ID from the authorized request
-        email: req.user.email,
-      },
+      newTodo,
     });
   } catch (error) {
     console.error("Error creating todo list:", error);
@@ -31,6 +64,73 @@ router.post("/todo/create", async (req, res) => {
       error: error.message,
     });
   }
+});
+
+// Toggle Completion Field
+router.put("/:id", async (req, res) => {
+  const { id } = req.params;
+
+  validParams(req, res, id);
+  const todo = await Todo.findById(id);
+
+  if (!todo) {
+    res.status(400).json({
+      error: "Todo does not exist.",
+    });
+    return;
+  }
+
+  const todoOwned = await Todo.findOne({
+    _id: id,
+    user: req.user._id,
+  });
+
+  if (!todoOwned) {
+    res.status(401).json({
+      error: "Unauthorized",
+    });
+    return;
+  }
+
+  todoOwned.completed = !todoOwned.completed;
+
+  await todoOwned.save();
+
+  return res.status(200).json({
+    todo,
+  });
+});
+
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+
+  validParams(req, res, id);
+  const todoExists = await Todo.findById(id);
+
+  if (!todoExists) {
+    res.status(400).json({
+      error: "Todo does not exist.",
+    });
+    return;
+  }
+
+  const todoOwned = await Todo.findOne({
+    _id: id,
+    user: req.user._id,
+  });
+
+  if (!todoOwned) {
+    res.status(400).json({
+      error: "Todo is not owned by you",
+    });
+    return;
+  }
+
+  await Todo.findByIdAndDelete(todoOwned._id);
+
+  return res.status(200).json({
+    todo: todoOwned,
+  });
 });
 
 export default router;
