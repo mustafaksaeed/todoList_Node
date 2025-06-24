@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { Schema, model } from "mongoose";
 
 const todoSchema = new mongoose.Schema({
   body: {
@@ -16,6 +16,6 @@ const todoSchema = new mongoose.Schema({
   },
 });
 
-const Todo = mongoose.model("Todo", todoSchema);
+const Todo = model("Todo", todoSchema);
 
 export default Todo;

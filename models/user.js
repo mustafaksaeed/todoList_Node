@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
+import mongoose, { Schema, model } from "mongoose";
 
-const userSchema = new mongoose.Schema({
+const userSchema = Schema({
   email: {
     type: String,
     required: true,
@@ -9,12 +9,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  todos: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Todo"
-  }]
+  todos: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Todo",
+    },
+  ],
 });
 
-const User = mongoose.model("User", userSchema);
+const User = model("User", userSchema);
 
 export default User;
